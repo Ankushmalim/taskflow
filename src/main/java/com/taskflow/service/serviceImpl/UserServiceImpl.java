@@ -1,10 +1,13 @@
 package com.taskflow.service.serviceImpl;
 
+import com.taskflow.dto.UserLoginRequestDto;
+import com.taskflow.dto.UserLoginResponseDto;
 import com.taskflow.dto.UserRequestDto;
 import com.taskflow.dto.UserResponseDto;
 import com.taskflow.entity.User;
 import com.taskflow.repository.UserRepository;
 import com.taskflow.service.UserService;
+import com.taskflow.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Override
     public UserResponseDto createUser(UserRequestDto userRequestDto) {
@@ -48,6 +52,23 @@ public class UserServiceImpl implements UserService {
                 user.getRole(),
                 user.getCreatedAt()
         )).collect(Collectors.toList());
+    }
+
+    @Override
+    public UserLoginResponseDto login(UserLoginRequestDto userLoginRequestDto) {
+        User user = userRepository.findByEmail(userLoginRequestDto.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(userLoginRequestDto.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Invalid credentials");
+        }
+
+//        String token = jwtUtil.generateToken(user.getEmail());
+//        UserLoginResponseDto ulrd = new UserLoginResponseDto();
+//        ulrd.setToken(token);
+//        return ulrd;
+
+        return new UserLoginResponseDto(jwtUtil.generateToken(user.getEmail()));
     }
 }
 
